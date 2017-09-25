@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
 
+#----------------------------------------------------------------------------
+# "THE BEER-WARE LICENSE" (Revision 42):
+# <jean-christophe.delaunay (at) synacktiv.com> wrote this file.  As long as you
+# retain this notice you can do whatever you want with this stuff. If we meet
+# some day, and you think this stuff is worth it, you can buy me a beer in
+# return.   Fist0urs
+# ----------------------------------------------------------------------------
+
 # All credits go to carmaa and his awesome 'inception' project
 # (https://github.com/carmaa/inception)
 # and to Romain Thomas (https://twitter.com/rh0main) for his
@@ -47,22 +55,22 @@ def find_offsets(content, pattern1, offset1=None, pattern2=None, offset2=None):
     return matches
 
 
-def dummy_convert_offsets_to_list_int(value):
+def dummy_convert_opcodes_to_list_int(value):
     return list(unpack("<" + ("B" * len(value.decode("hex"))), value.decode("hex")))
 
 
 def initialize_Windows_objects():
     OS_list = {}
     WindowsXP = {}
-    opcodes_XP = dummy_convert_offsets_to_list_int("83f8107511b0018b")
+    opcodes_XP = dummy_convert_opcodes_to_list_int("83f8107511b0018b")
     WindowsXP["x86"] = [OS(version="WindowsXP", architecture="x86", SP=["SP2", "SP3"],
                            pattern1=[0, opcodes_XP])]
     OS_list["WindowsXP"] = WindowsXP
 
     WindowsVista = {}
-    opcodes1_Vista_x64 = dummy_convert_offsets_to_list_int("c60f85")
-    opcodes2_Vista_x64 = dummy_convert_offsets_to_list_int("b8")
-    opcodes_Vista_x86 = dummy_convert_offsets_to_list_int("83f8107513b0018b")
+    opcodes1_Vista_x64 = dummy_convert_opcodes_to_list_int("c60f85")
+    opcodes2_Vista_x64 = dummy_convert_opcodes_to_list_int("b8")
+    opcodes_Vista_x86 = dummy_convert_opcodes_to_list_int("83f8107513b0018b")
 
     WindowsVista["x64"] = [OS(version="WindowsVista", architecture="x64", SP="SP2",
                               pattern1=[0, opcodes1_Vista_x64], pattern2=[7, opcodes2_Vista_x64])]
@@ -72,11 +80,11 @@ def initialize_Windows_objects():
     OS_list["WindowsVista"] = WindowsVista
 
     Windows7 = {}
-    opcodes1_7_x64 = dummy_convert_offsets_to_list_int("c60f85")
-    opcodes2_7_x64 = dummy_convert_offsets_to_list_int("b8")
-    opcodes_7_x86_SP0 = dummy_convert_offsets_to_list_int("83f8107513b0018b")
-    opcodes1_7_x86_SP1 = dummy_convert_offsets_to_list_int("83f8100f85")
-    opcodes2_7_x86_SP1 = dummy_convert_offsets_to_list_int("b0018b")
+    opcodes1_7_x64 = dummy_convert_opcodes_to_list_int("c60f85")
+    opcodes2_7_x64 = dummy_convert_opcodes_to_list_int("b8")
+    opcodes_7_x86_SP0 = dummy_convert_opcodes_to_list_int("83f8107513b0018b")
+    opcodes1_7_x86_SP1 = dummy_convert_opcodes_to_list_int("83f8100f85")
+    opcodes2_7_x86_SP1 = dummy_convert_opcodes_to_list_int("b0018b")
 
     Windows7["x64"] = [OS(version="Windows7", architecture="x64",
                           SP=["SP0","SP1"], pattern1=[0, opcodes1_7_x64],
@@ -89,9 +97,9 @@ def initialize_Windows_objects():
     OS_list["Windows7"] = Windows7
 
     Windows8 = {}
-    opcodes1_8_x64 = dummy_convert_offsets_to_list_int("c60f85")
-    opcodes2_8_x64 = dummy_convert_offsets_to_list_int("66b80100")
-    opcodes_8_x86 = dummy_convert_offsets_to_list_int("8bff558bec81ec90000000a1")
+    opcodes1_8_x64 = dummy_convert_opcodes_to_list_int("c60f85")
+    opcodes2_8_x64 = dummy_convert_opcodes_to_list_int("66b80100")
+    opcodes_8_x86 = dummy_convert_opcodes_to_list_int("8bff558bec81ec90000000a1")
 
     Windows8["x64"] = [OS(version="Windows8", architecture="x64", SP="",
                           pattern1=[0, opcodes1_8_x64],
@@ -101,9 +109,9 @@ def initialize_Windows_objects():
     OS_list["Windows8"] = Windows8
 
     Windows8_1 = {}
-    opcodes1_8_1_x64 = dummy_convert_offsets_to_list_int("c60f85")
-    opcodes2_8_1_x64 = dummy_convert_offsets_to_list_int("66b80100")
-    opcodes_8_1_x86 = dummy_convert_offsets_to_list_int("8bff558bec81ec90000000a1")
+    opcodes1_8_1_x64 = dummy_convert_opcodes_to_list_int("c60f85")
+    opcodes2_8_1_x64 = dummy_convert_opcodes_to_list_int("66b80100")
+    opcodes_8_1_x86 = dummy_convert_opcodes_to_list_int("8bff558bec81ec90000000a1")
 
     Windows8_1["x64"] = [OS(version="Windows8.1", architecture="x64", SP="",
                             pattern1=[0, opcodes1_8_1_x64],
