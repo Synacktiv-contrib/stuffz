@@ -1,11 +1,15 @@
 meta:
-  id: swupdate
+  id: pocketbook_swupdate
   endian: le
   encoding: ASCII
   title: PocketBook update format
+  file-extension: bin
+  -filename-regexp: "^SWUPDATE\\.BIN$"
+  xref:
+    wikidata: Q1186991
 
 doc: |
-    Pocket book update format
+    PocketBook update format
     A header of 0x400 bytes containing a partition table,
     and then an array of partitions
     (c) Synacktiv 2018
@@ -39,7 +43,7 @@ types:
       - id: fw_partitions
         type: part_header
         repeat: until
-        repeat-until: _.part_type.to_i==0x00
+        repeat-until: _.part_type.to_i == 0x00
   part_header:
     seq:
       - id: part_type
@@ -70,3 +74,4 @@ enums:
     0x72: rootfs_img
     0x73: swupdate_tar_gz
     0x75: uboot_loader
+    0x76: uboot_loader_too

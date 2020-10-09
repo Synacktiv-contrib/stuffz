@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
     PocketBook SWUPDATE.BIN parser script
     Copyright 2018 Synacktiv
@@ -13,20 +14,42 @@
 """
 
 import argparse
+import base64
 import binascii
-
+import mmap
+import os.path
 from hashlib import md5, sha256
 
-import swupdate
+from kaitaistruct import KaitaiStream
 
-PREFIX = "./"
+from pocketbook_swupdate import PocketbookSwupdate
+
+
+class MMap:
+    """Easy-to-use wrapper for mmap. This class is licensed under Unlicense by KOLANICH"""
+
+    __slots__ = ("path", "f", "m")
+
+    def __init__(self, path):
+        self.path = path
+        self.f = None
+        self.m = None
+
+    def __enter__(self):
+        self.f = open(self.path, "rb").__enter__()
+        self.m = mmap.mmap(self.f.fileno(), 0, prot=mmap.PROT_READ).__enter__()
+        return self.m
+
+    def __exit__(self, *args, **kwargs):
+        self.m.__exit__(*args, **kwargs)
+        self.f.__exit__(*args, **kwargs)
 
 
 def show_info(fname):
     """
         Dump the informations contained in the structure
     """
-    mupdate = swupdate.Swupdate.from_file(fname)
+    mupdate = PocketbookSwupdate.from_file(fname)
 
     print("Update magic: %s" % mupdate.header.magic)
     print("Update Model: %s" % mupdate.header.model)
@@ -73,16 +96,17 @@ def get_extension_from_type(part_type):
         Outputs a sensible file extension given a partition type
     """
     extensions = {
-        swupdate.Swupdate.PartTypeEnum.ebrmain_img: ".ebrmain",
-        swupdate.Swupdate.PartTypeEnum.a_img: ".aimg",
-        swupdate.Swupdate.PartTypeEnum.bmp_image: ".bmp",
-        swupdate.Swupdate.PartTypeEnum.dragon_tar: "_dragon.tar",
-        swupdate.Swupdate.PartTypeEnum.elf_megadog_img: "_megadog.elf",
-        swupdate.Swupdate.PartTypeEnum.rootfs_img: ".rootfs",
-        swupdate.Swupdate.PartTypeEnum.swupdate_tar_gz: "_swupdate.tar.gz",
-        swupdate.Swupdate.PartTypeEnum.updatefs_cramfs: ".cramfs",
-        swupdate.Swupdate.PartTypeEnum.uboot_loader: ".uboot",
-        swupdate.Swupdate.PartTypeEnum.kernel_img: ".kernel",
+        PocketbookSwupdate.PartTypeEnum.ebrmain_img: ".ebrmain",
+        PocketbookSwupdate.PartTypeEnum.a_img: ".aimg",
+        PocketbookSwupdate.PartTypeEnum.bmp_image: ".bmp",
+        PocketbookSwupdate.PartTypeEnum.dragon_tar: "_dragon.tar",
+        PocketbookSwupdate.PartTypeEnum.elf_megadog_img: "_megadog.elf",
+        PocketbookSwupdate.PartTypeEnum.rootfs_img: ".rootfs",
+        PocketbookSwupdate.PartTypeEnum.swupdate_tar_gz: "_swupdate.tar.gz",
+        PocketbookSwupdate.PartTypeEnum.updatefs_cramfs: ".cramfs",
+        PocketbookSwupdate.PartTypeEnum.uboot_loader: ".uboot",
+        PocketbookSwupdate.PartTypeEnum.uboot_loader_too: ".uboot",
+        PocketbookSwupdate.PartTypeEnum.kernel_img: ".kernel",
     }
 
     try:
@@ -91,29 +115,32 @@ def get_extension_from_type(part_type):
         return ".bin"
 
 
-def dump(fname):
+def dump(fname, namesByHash=True):
     """
         Dump the sections
     """
-    mupdate = swupdate.Swupdate.from_file(fname)
-    mfile = open(fname, "rb")
+    
+    with MMap(fname) as mfile:
+        prefix = os.path.dirname(fname)
+        mupdate = PocketbookSwupdate(KaitaiStream(mfile))
+        for i, part in enumerate(mupdate.header.fw_partitions):
+            if part.part_type != PocketbookSwupdate.PartTypeEnum.empty:
+                print("Dumping section of type %s size 0x%x offset %x" % (
+                    part.part_type,
+                    part.size,
+                    part.offset))
+                mfile.seek(0)
+                mfile.seek(part.offset + 1024)
+                data = mfile.read(part.size + 8192)
 
-    for part in mupdate.header.fw_partitions:
-        if part.part_type != swupdate.Swupdate.PartTypeEnum.empty:
-            print("Dumping section of type %s size 0x%x offset %x" % (
-                part.part_type,
-                part.size,
-                part.offset))
-            mfile.seek(0)
-            mfile.seek(part.offset + 1024)
-            data = mfile.read(part.size + 8192)
+                if namesByHash:
+                    baseName = base64.b64encode(sha256(data).digest()).decode("ascii").replace("/", "@")
+                else:
+                    baseName = str(i)
+                out = os.path.join(prefix, baseName + get_extension_from_type(part.part_type))
 
-            mhash = sha256(data).hexdigest()
-            out = PREFIX + mhash
-            out += get_extension_from_type(part.part_type)
-
-            with open(out, "wb") as out_file:
-                out_file.write(data)
+                with open(out, "wb") as out_file:
+                    out_file.write(data)
 
 
 def main():
@@ -121,7 +148,8 @@ def main():
         Argument parsing and dispatching
     """
     actions = {
-        "dump": dump,
+        "dump": lambda fn: dump(fn, True),
+        "dump_no_hash": lambda fn: dump(fn, False),
         "info": show_info
     }
     parser = argparse.ArgumentParser("Test script for swupdate format parsing")
